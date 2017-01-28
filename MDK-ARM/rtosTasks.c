@@ -44,12 +44,15 @@ void motorTask(void * pvParameters){
 			case MOTOR_INIT:
 				motorInit(GPIOC, GPIO_PIN_6);
 				motorInit(GPIOC, GPIO_PIN_5);
+				motorInit(GPIOA, GPIO_PIN_12);
+				setMotorEnable(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
 				motorStatus = MOTOR_START;
 				cycleCounter = 0;
 				motorCycle = 0;
 				printf("\nMotorInit");
 				break;
 			case MOTOR_START:
+				setMotorEnable(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
 				SetMotorDirection(MOTOR_RIGHT);
 				if(motorCycle<PERIOD/2)
 					SetMotorDirection(MOTOR_RIGHT);
@@ -68,6 +71,7 @@ void motorTask(void * pvParameters){
 				
 				break;
 			case MOTOR_STOP:
+				setMotorEnable(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
 				if(cycleCounter < CycleNumber-1){
 					motorStatus = MOTOR_START;
 					cycleCounter++;
@@ -293,4 +297,8 @@ void motorSet(uint8_t mStatus, uint16_t count){
 
 uint8_t motorGet(){
 	return motorStatus;
+}
+
+void setMotorEnable(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState GPIO_status){
+	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, GPIO_status);
 }

@@ -58,4 +58,6 @@ void GetAndSend(void);
 //ZMIANY
 void motorSet(uint8_t mStatus, uint16_t count);
 uint8_t motorGet();
+
+void setMotorEnable(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState GPIO_status);
 #endif
