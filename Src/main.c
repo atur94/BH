@@ -62,23 +62,26 @@ static void MX_TIM3_Init(void);
 extern uint16_t val2;
 extern uint16_t PERIOD;
 
-	uint8_t loop_choose = 0;
+	uint8_t edge = 0;
 	uint32_t diff =0;
 	uint32_t diffInCM = 0;
+	
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
-
-
+	//Wychwytywane zbocza narastajacego i ustawienie zegara w celu liczenia czasu
 	if(htim->Instance == TIM2){
-		if(loop_choose == 0){
+		if(edge == 0){
 			__HAL_TIM_SetCounter(&htim2, 0);
-			loop_choose++;
+			edge++; // Zmiana zbocza na zbocze opadajace
 
 		}
-		else if(loop_choose == 1){
+		else if(edge == 1){
+			//Zbocze opadajace odczytuje obecny czas ustawia i przelicza go na CM
 			diff = __HAL_TIM_GetCompare(&htim2, TIM_CHANNEL_1);
 			diffInCM = diff * 170 /10000; //High level time in s x velocity of sound 340m/s /2
 			diffInCM = diffInCM >= 100 ? 100 : diffInCM;
-			loop_choose = 0;
+			//Z powodu bardzo dziwnego zachowania mojego czujnika, maksymalna odleglosc jaka 
+			//jest mierzona jest 100cm
+			edge = 0; //Zmiana zbocza na zbocze narastajace
 		}
 	}
 }
@@ -128,6 +131,7 @@ int main(void)
 }
 
 /** System Clock Configuration*/
+//STEP1
 void SystemClock_Config(void)
 {
 
@@ -172,6 +176,7 @@ void SystemClock_Config(void)
 }
 
 /* SPI2 init function */
+//STEP3
 static void MX_SPI2_Init(void)
 {
 
@@ -201,6 +206,7 @@ static void MX_SPI2_Init(void)
 }
 
 /* USART2 init function */
+//STEP3
 static void MX_USART2_UART_Init(void)
 {
 
@@ -263,6 +269,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* TIM2 init function */
+//STEP2
 static void MX_TIM2_Init(void)
 {
 
@@ -310,6 +317,7 @@ static void MX_TIM2_Init(void)
 }
 
 /* TIM3 init function */
+//STEP2
 static void MX_TIM3_Init(void)
 {
 
@@ -365,14 +373,13 @@ static void MX_TIM3_Init(void)
   */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler */
-  /* User can add his own implementation to report the HAL error return state */
+
   while(1) 
   {
 		printf("Error Handler \n");
 		HAL_Delay(1000);
   }
-  /* USER CODE END Error_Handler */ 
+
 }
 
 #ifdef USE_FULL_ASSERT
@@ -386,12 +393,7 @@ void Error_Handler(void)
    */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-    ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 	printf("Wrong parameters value.");
-  /* USER CODE END 6 */
-
 }
 
 #endif

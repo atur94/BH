@@ -71,14 +71,12 @@ void motorTask(void * pvParameters){
 				if(cycleCounter < CycleNumber-1){
 					motorStatus = MOTOR_START;
 					cycleCounter++;
-				}
-				
+				}				
 				break;
 			case MOTOR_DO_NOTHING:
 					
 				break;
-			case MOTOR_QUEUE_WAIT:
-				
+			case MOTOR_QUEUE_WAIT:				
 				break;
 			case SCAN:
 				motorStatus = MOTOR_INIT;
@@ -132,7 +130,10 @@ void MainTask(void * pvParameters){
 	reg_wizchip_cs_cbfunc(cs_sel, cs_desel);
 	reg_wizchip_spi_cbfunc(spi_rb, spi_wb);	
 	wizchip_init(bufSize, bufSize);
-	wiz_NetInfo netInfo = { .mac = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05},.ip  = { 192, 168, 1, 110},.sn  = { 255, 255, 255, 0 },.gw  = { 192, 168, 1, 100}};
+	wiz_NetInfo netInfo = { .mac = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05}, 
+							.ip  = { 192, 168, 1, 110},
+							.sn  = { 255, 255, 255, 0 },
+							.gw  = { 192, 168, 1, 100}};
 
 	wizchip_setnetinfo(&netInfo);
 	
@@ -145,40 +146,38 @@ void MainTask(void * pvParameters){
 		switch(status = getSn_SR(0))
 		{
 			case SOCK_ESTABLISHED:
-				if(motorStatus == MOTOR_DO_NOTHING){ 
-					motorStatus = MOTOR_INIT;
-					motorCycle  = 0;
+				if(motorGet() == MOTOR_DO_NOTHING){ 
+					motorSet(MOTOR_INIT, 0);
 				}
-				
-				//printf("socket established\r");
 				if(bchannel_start[ch] == 1){
 					uint8_t remoteIP[4];
 					uint16_t remotePort;
 					getsockopt(ch, SO_DESTIP, remoteIP);
 					getsockopt(ch, SO_DESTPORT, &remotePort);
-					
-					printf("Connected to %d.%d.%d.%d:%d \n", remoteIP[0],remoteIP[1],remoteIP[2],remoteIP[3],remotePort);
-					
+					printf("Connected to %d.%d.%d.%d:%d \n", remoteIP[0],
+															remoteIP[1],
+															remoteIP[2],
+															remoteIP[3],
+															remotePort);
 					bchannel_start[ch] = 2;
 				}
 				osDelay(10);
-				
+				//CZESC KODU ODPOWIEDZIALNA ZA ODBIERANIE PRZEZ SERWER KOMEND
+				//CZESC UZYTA DO TESTOWANIA SKANERA
 				if((len = getSn_RX_RSR(ch)) >  0){
 					memset(bufor, 0, sizeof(bufor));
-					if(len > TX_RX_MAX_BUF_SIZE) len = TX_RX_MAX_BUF_SIZE;
-					
+					if(len > TX_RX_MAX_BUF_SIZE) len = TX_RX_MAX_BUF_SIZE;					
 					recv(ch, (uint8_t *)bufor, len);
 					osDelay(20);
-					msgBufor(bufor,len);
-//					send(ch, (uint8_t *)data_buf, sizeof(data_buf));					
+					msgBufor(bufor,len);					
 					printf("%d\n", len);	
 				}
+				//WYSYLANIE DANYCH PODCZAS GDY SKANOWANIE JEST AKTYWNE
 				if(motorStatus == MOTOR_START)
 					GetAndSend();
 				break;
 			case SOCK_LISTEN:
-				printf("socket listen\r\n");
-
+				printf("socket listening\r\n");
 				motorCycle  = 0;
 				osDelay(200);
 				break;
@@ -192,8 +191,7 @@ void MainTask(void * pvParameters){
 				break;
 			
 			case SOCK_CLOSED:
-				motorStatus = MOTOR_DO_NOTHING;
-				motorCycle  = 0;
+				motorSet(MOTOR_DO_NOTHING, 0);
 				printf("socket closed\n");
 				bchannel_start[ch] = 0;
 				if(!bchannel_start[ch]){
@@ -206,7 +204,6 @@ void MainTask(void * pvParameters){
 				} else {
 					printf("Entering listen mode\r\n");
 					listen(ch);
-					
 				}
 				break;
 			case SOCK_INIT:
@@ -278,10 +275,22 @@ void GetAndSend(void){
 
 					send(0, (char *)receivedStepBuf, sizeof(receivedStepBuf));	
 
-					printf("%d%d%d%d, %d\n", (char)receivedStepBuf[0],(char)receivedStepBuf[1],(char)receivedStepBuf[2],(char)receivedStepBuf[3], receivedStep );
+					printf("%d%d%d%d, %d\n", (char)receivedStepBuf[0],
+											 (char)receivedStepBuf[1],
+											 (char)receivedStepBuf[2],
+											 (char)receivedStepBuf[3], 
+											 receivedStep );
 				}else{
 			
 				}
 	}while(motorStatus != MOTOR_START);
 }
 
+void motorSet(uint8_t mStatus, uint16_t count){
+	motorStatus = mStatus;
+	motorCycle = count;
+}
+
+uint8_t motorGet(){
+	return motorStatus;
+}

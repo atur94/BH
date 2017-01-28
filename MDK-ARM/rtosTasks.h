@@ -55,5 +55,7 @@ void MainTask(void * pvParameters);
 void msgBufor(uint8_t* msg, uint16_t length);
 uint16_t ASCII_convert(uint16_t ascii);
 void GetAndSend(void);
-
+//ZMIANY
+void motorSet(uint8_t mStatus, uint16_t count);
+uint8_t motorGet();
 #endif
